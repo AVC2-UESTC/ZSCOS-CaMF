@@ -1,0 +1,1 @@
+from .ImageDepthNet import VST_Segmentation_fgseg_cfg
