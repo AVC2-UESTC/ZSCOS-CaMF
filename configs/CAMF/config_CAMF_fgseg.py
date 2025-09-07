@@ -162,7 +162,8 @@ Model_cfg = dict(
         model_cfg_args=dict(
             
             pretrained_weights = '/root/WeLi/model_weights/eva02_L_pt_m38m_p14to16.pth',
-            finetune_weights = '/root/WeLi/work_dir/camp2_adpt_duts.pth',
+            finetune_weights = '/root/WeLi/work_dir/camf_duts.pth',
+            # finetune_weights = '/root/WeLi/work_dir/camf_cod.pth',
             
  
             tuning_mode = 'PEFT',
