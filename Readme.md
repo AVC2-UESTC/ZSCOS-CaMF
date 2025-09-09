@@ -26,6 +26,10 @@
   <img width="1000" src="figs/framework.png">
 </p> -->
 
+
+![alt text](./assets/fig1.png)
+
+
 ---
 
 
@@ -74,7 +78,11 @@ For training, put the converted weights in the `model_weights` folder.
 
 ### Fine-tuned Weights
 
-Preparing...
+| Method | Dataset    | Weights | Configs |
+| --- | --- | --- | --- |
+| CAMF-ZS | DUTS    | [camf_duts.pth](https://github.com/AVC2-UESTC/ZSCOS-CaMF/releases/download/weights/camf_duts.pth) | [config](./configs/CAMF/config_CAMF_fgseg_test.py) |
+| CAMF-S | CAMO+COD10K    | [camf_cod.pth](https://github.com/AVC2-UESTC/ZSCOS-CaMF/releases/download/weights/camf_cod.pth) |  |
+
 
 For testing, put the pretrained weights and fine-tuned weights in the `model_weights` folder.
 
@@ -88,8 +96,7 @@ The following datasets are used in this paper:
 - [DUTS](https://saliencydetection.net/duts/#orgf319326)
 - [COD10K](https://github.com/DengPingFan/SINet/)
 - [CAMO](https://drive.google.com/drive/folders/1h-OqZdwkuPhBvGcVAwmh0f1NGqlH_4B6)
-
-Preparing...
+- [NC4K](https://github.com/JingZhang617/COD-Rank-Localize-and-Segment)
 
 ---
 

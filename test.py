@@ -122,7 +122,7 @@ def main(scheduler_cfg, dataset_cfg, model_cfg, runtime: Dict):
 if __name__ == "__main__":
     
     
-    config = './configs/CAMF/config_CAMF_fgseg.py' # CAMF    
+    config = './configs/CAMF/config_CAMF_fgseg_test.py' # CAMF    
     
     
     assert os.path.exists(config), f"No such file: {config}"
