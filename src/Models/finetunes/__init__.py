@@ -1,2 +1,2 @@
-from .adapter import Adapter, InvertedSwiGLU_Adapter
+from .adapter import Adapter
 from .sfp import SimpleFeaturePyramid
