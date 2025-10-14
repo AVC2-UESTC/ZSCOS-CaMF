@@ -201,6 +201,8 @@ class Joint_Foreground_Dataset(Dataset):
                 
         else:
             raise ValueError(f'"mode" must be "train" or "val", but got {mode}')
+        
+       
             
         for path in self.images_path_dict.values():
             assert os.path.exists(path), f"path '{path}' does not exist."
@@ -249,6 +251,10 @@ class Joint_Foreground_Dataset(Dataset):
         
             self.image_file_paths = self.image_file_paths[0::step]
             self.mask_file_paths = self.mask_file_paths[0::step]
+            
+        #sort 
+        self.image_file_paths.sort()
+        self.mask_file_paths.sort()
             
 
     def _check_img_segmap(self, image_names, seg_map_names, img_suffix, seg_map_suffix):
