@@ -16,7 +16,7 @@ from ..builder import build_loss
 from ..utils import resize
 
 from ..backbones.eva02_ft import (EVA_02_VisionTransformer_Adapter, EVA_02_VisionTransformer_Adapter_SFP, 
-                                EVA_02_VisionTransformer_Mona, EVA_02_VisionTransformer_Mona_SFP,)
+                                )
 from .eva_seg import EVA_02_Segmentation, EVA_02_Segmentation_Config
 
 from ..segmentors import BaseSegmenter, BaseSegmentor_Config

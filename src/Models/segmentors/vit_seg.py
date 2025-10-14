@@ -9,7 +9,7 @@ from torch import Tensor
 from einops import rearrange
 
 from .base_segmenter import BaseSegmenter, BaseSegmentor_Config
-from ..backbones.vit_ft import VisionTransformer_Adapter, VisionTransformer_Adapter_SFP
+# from ..backbones.vit_ft import VisionTransformer_Adapter, VisionTransformer_Adapter_SFP
 # from ..backbones.cmae_vit_ft import CMAE_VisionTransformer_Adapter_SFP
 
 from ..decode_heads.decode_head import SimpleMaskDecoder

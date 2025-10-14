@@ -16,8 +16,9 @@ runtime = dict(
 Dataset_cfg = dict(
     dataset_cfg_args=dict(
         # data_root=['./datasets/CAMO', './datasets/COD10KCAM'], 
-        data_root='./datasets/CAMO', 
-        # data_root='./datasets/CHAMELEON', 
+        # data_root='./datasets/CAMO', 
+        
+        data_root='./datasets/CHAMELEON', 
         # data_root='./datasets/COD10KCAM', 
         # data_root='./datasets/KvasirSEG',
         # class_suffix=None,
@@ -161,9 +162,9 @@ Model_cfg = dict(
         model_cfg_name="CAMF_Config",
         model_cfg_args=dict(
             
-            pretrained_weights = '/root/WeLi/model_weights/eva02_L_pt_m38m_p14to16.pth',
-            finetune_weights = '/root/WeLi/work_dir/camf_duts.pth',
-            # finetune_weights = '/root/WeLi/work_dir/camf_cod.pth',
+            pretrained_weights = './model_weights/eva02_L_pt_m38m_p14to16.pth',
+            # finetune_weights = '/root/WeLi/work_dir/camf_duts.pth',
+            finetune_weights = './model_weights/camf_cod.pth',
             
  
             tuning_mode = 'PEFT',

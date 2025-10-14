@@ -1,8 +1,8 @@
 
 
 _base_ = [
-    # '../_base_/datasets/FGSeg_MM_cfg.py',
-    '../_base_/datasets/FGSeg_cfg.py',
+    '../_base_/datasets/FGSeg_MM_cfg.py',
+    # '../_base_/datasets/FGSeg_cfg.py',
     '../_base_/schedules/temp_scheduler.py', 
 ]
 
