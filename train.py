@@ -276,7 +276,7 @@ if __name__ == "__main__":
     
     
     
-    config = './configs/CaMP/config_CaMP_adapter_fgseg.py' # CaMP
+    config = './configs/CAMF/config_CAMF_fgseg_train.py' 
     
    
     
