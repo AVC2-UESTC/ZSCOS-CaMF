@@ -92,7 +92,9 @@ class Foreground_Prompt_Dataset(Dataset):
         #each file path loading
         self.image_file_paths = [os.path.join(self.images_path, n) for n in image_names]
         self.mask_file_paths = [os.path.join(self.seg_maps_path, n) for n in seg_map_names]
-                
+        self.image_file_paths.sort()
+        self.mask_file_paths.sort()
+
         # load prompts
         self.use_prompt = use_prompt
         if use_prompt:
@@ -384,8 +386,10 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
         self.mask_file_paths = []
         for dataset_name, names in seg_map_names.items():
             self.mask_file_paths.extend([os.path.join(self.seg_maps_path[dataset_name], n) for n in names])
-                
-                
+        self.image_file_paths.sort()
+        self.mask_file_paths.sort()
+
+
         # load prompts
         self.use_prompt = use_prompt
         if use_prompt:

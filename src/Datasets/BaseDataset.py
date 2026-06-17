@@ -241,8 +241,10 @@ class Joint_Foreground_Dataset(Dataset):
         self.mask_file_paths = []
         for dataset_name, names in seg_map_names.items():
             self.mask_file_paths.extend([os.path.join(self.seg_maps_path_dict[dataset_name], n) for n in names])
-                
-        
+
+        self.image_file_paths.sort()
+        self.mask_file_paths.sort()
+
         self.transform = transforms
         
         if truncate_ratio is not None:
@@ -251,11 +253,7 @@ class Joint_Foreground_Dataset(Dataset):
         
             self.image_file_paths = self.image_file_paths[0::step]
             self.mask_file_paths = self.mask_file_paths[0::step]
-            
-        #sort 
-        self.image_file_paths.sort()
-        self.mask_file_paths.sort()
-            
+
 
     def _check_img_segmap(self, image_names, seg_map_names, img_suffix, seg_map_suffix):
         re_seg_map_names = []
