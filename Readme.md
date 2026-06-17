@@ -49,6 +49,8 @@ Please install MMCV following the instructions [here](https://github.com/open-mm
 
 Please install xFormers following the instructions [here](https://github.com/facebookresearch/xformers/tree/main).
 
+> **Note:** xFormers may not support some newer GPUs (e.g., RTX 5090). If you encounter compatibility issues, set `xattn=False` in the model config `backbone_cfg` to disable xFormers attention and fall back to native PyTorch implementation.
+
 
 ### Other Dependencies
 

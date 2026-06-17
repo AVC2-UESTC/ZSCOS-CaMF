@@ -49,13 +49,14 @@ class Foreground_Prompt_Dataset(Dataset):
         mode: 'train', 'val'
 
     '''
-    def __init__(self, dataset_root, 
+    def __init__(self, dataset_root,
                  prompt_suffix='.pt',
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
-                 mode: str = 'train', 
+                 mode: str = 'train',
                  transforms=None,
                  truncate_ratio: float = None,
+                 use_prompt: bool = True,
                  ):
         
         assert os.path.exists(dataset_root), f"path '{dataset_root}' does not exist."
@@ -64,11 +65,13 @@ class Foreground_Prompt_Dataset(Dataset):
         if mode == 'train':
             self.images_path = os.path.join(dataset_root, 'images', 'training')
             self.seg_maps_path = os.path.join(dataset_root, 'annotations', 'training')
-            self.prompts_path = os.path.join(dataset_root, 'train_latent_prompt'+prompt_suffix)
+            if use_prompt:
+                self.prompts_path = os.path.join(dataset_root, 'train_latent_prompt'+prompt_suffix)
         elif mode == 'val':
             self.images_path = os.path.join(dataset_root, 'images', 'validation')
             self.seg_maps_path = os.path.join(dataset_root, 'annotations', 'validation')
-            self.prompts_path = os.path.join(dataset_root, 'val_latent_prompt'+prompt_suffix)
+            if use_prompt:
+                self.prompts_path = os.path.join(dataset_root, 'val_latent_prompt'+prompt_suffix)
         else:
             raise ValueError(f'Invalid mode {mode}')
         
@@ -91,12 +94,16 @@ class Foreground_Prompt_Dataset(Dataset):
         self.mask_file_paths = [os.path.join(self.seg_maps_path, n) for n in seg_map_names]
                 
         # load prompts
-        self.prompts = torch.load(self.prompts_path) # dict('{img_name}': Tensor(1, prompt_length, c))
-        # padding
-        # max_length = max([p.size(1) for p in self.prompts.values()])
-        # self.prompts = {k: torch.nn.functional.pad(p, (0, max_length - p.size(0)), mode='constant', value=0) for k, p in self.prompts.items()}
-        padding_length = 30
-        self.prompts = {k: torch.nn.functional.pad(p, (0, 0, 0, padding_length - p.size(1)), mode='constant', value=0) for k, p in self.prompts.items()}
+        self.use_prompt = use_prompt
+        if use_prompt:
+            self.prompts = torch.load(self.prompts_path) # dict('{img_name}': Tensor(1, prompt_length, c))
+            # padding
+            # max_length = max([p.size(1) for p in self.prompts.values()])
+            # self.prompts = {k: torch.nn.functional.pad(p, (0, max_length - p.size(0)), mode='constant', value=0) for k, p in self.prompts.items()}
+            padding_length = 30
+            self.prompts = {k: torch.nn.functional.pad(p, (0, 0, 0, padding_length - p.size(1)), mode='constant', value=0) for k, p in self.prompts.items()}
+        else:
+            self.prompts = None
         
         
         self.transform = transforms
@@ -133,8 +140,11 @@ class Foreground_Prompt_Dataset(Dataset):
         
         # prompts
         image_name = os.path.basename(self.image_file_paths[idx])
-        prompt = self.prompts[image_name].float()
-        padding_prompt = None
+        if self.use_prompt:
+            prompt = self.prompts[image_name].float()
+        else:
+            prompt = None
+        # padding_prompt = None
         
         #create Tensor 
         
@@ -156,13 +166,16 @@ class Foreground_Prompt_Dataset(Dataset):
     
     @staticmethod
     def collate_fn(batch):
-        prompts = [item['prompt'].squeeze(0) for item in batch]
+        prompts = [item['prompt'].squeeze(0) for item in batch if item['prompt'] is not None]
         images = [item['image'] for item in batch]
         seg_maps = [item['seg_map'] for item in batch]
-        prompts_tensor = torch.stack(prompts)
+        if len(prompts) > 0:
+            prompts_tensor = torch.stack(prompts)
+        else:
+            prompts_tensor = None
         images_tensor = torch.stack(images)
         seg_maps_tensor = torch.stack(seg_maps)
-        
+
         inputs = dict(
             prompt=prompts_tensor,
             image=images_tensor
@@ -170,8 +183,8 @@ class Foreground_Prompt_Dataset(Dataset):
         label = dict(
             seg_maps=seg_maps_tensor
         )
-        
-        
+
+
         return inputs, label
     
     
@@ -182,35 +195,41 @@ class Foreground_Prompt_Dataset(Dataset):
     
 class Foreground_Prompt_Dataset_Config():
     '''
-    
+
     '''
 
     def __init__(self,
-                 data_root, 
-                 train_pipeline, 
-                 test_pipeline, 
-                 truncate_ratio = None) -> None:
+                 data_root,
+                 train_pipeline,
+                 test_pipeline,
+                 truncate_ratio = None,
+                 use_prompt_train: bool = True,
+                 use_prompt_val: bool = False) -> None:
         self.data_root = data_root
-        
+
         self.train_pipeline = train_pipeline
         self.test_pipeline = test_pipeline
-        
+
         self.truncate_ratio = truncate_ratio
-        
+        self.use_prompt_train = use_prompt_train
+        self.use_prompt_val = use_prompt_val
+
 
     @property
     def dataset_train(self):
-        return Foreground_Prompt_Dataset(dataset_root=self.data_root, 
-                                  mode='train', 
+        return Foreground_Prompt_Dataset(dataset_root=self.data_root,
+                                  mode='train',
                                   transforms=self.train_pipeline,
-                                  truncate_ratio=self.truncate_ratio)
-    
+                                  truncate_ratio=self.truncate_ratio,
+                                  use_prompt=self.use_prompt_train)
+
     @property
     def dataset_val(self):
-        return Foreground_Prompt_Dataset(dataset_root=self.data_root, 
-                                  mode='val', 
+        return Foreground_Prompt_Dataset(dataset_root=self.data_root,
+                                  mode='val',
                                   transforms=self.test_pipeline,
-                                  truncate_ratio=self.truncate_ratio)  
+                                  truncate_ratio=self.truncate_ratio,
+                                  use_prompt=self.use_prompt_val)
     
     
     
@@ -258,14 +277,15 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
         class_suffix: If None, then no class labels will be used.
 
     '''
-    def __init__(self, dataset_root: Union[str, Sequence[str]], 
+    def __init__(self, dataset_root: Union[str, Sequence[str]],
                  prompt_suffix='.pt',
                  class_suffix='.json',
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
-                 mode: str = 'train', 
+                 mode: str = 'train',
                  transforms=None,
                  truncate_ratio: float = None,
+                 use_prompt: bool = True,
                  ):
         
         if isinstance(dataset_root, str):
@@ -303,19 +323,21 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
             for dataset_name, dataset_path in self.dataset_name_path_dict.items():
                 self.images_path[dataset_name] = os.path.join(dataset_path, 'images', 'training')
                 self.seg_maps_path[dataset_name] = os.path.join(dataset_path, 'annotations', 'training')
-                self.prompts_path[dataset_name] = os.path.join(dataset_path, 'train_latent_prompt'+prompt_suffix)
-                
+                if use_prompt:
+                    self.prompts_path[dataset_name] = os.path.join(dataset_path, 'train_latent_prompt'+prompt_suffix)
+
                 if self.class_path is not None:
                     self.class_path[dataset_name] = os.path.join(dataset_path, 'train_class_results'+class_suffix)
-                
+
         elif mode == 'val':
             for dataset_name, dataset_path in self.dataset_name_path_dict.items():
                 self.images_path[dataset_name] = os.path.join(dataset_path, 'images', 'validation')
                 self.seg_maps_path[dataset_name] = os.path.join(dataset_path, 'annotations', 'validation')
-                self.prompts_path[dataset_name] = os.path.join(dataset_path, 'val_latent_prompt'+prompt_suffix)
+                if use_prompt:
+                    self.prompts_path[dataset_name] = os.path.join(dataset_path, 'val_latent_prompt'+prompt_suffix)
                 if self.class_path is not None:
                     self.class_path[dataset_name] = os.path.join(dataset_path, 'val_class_results'+class_suffix)
-                
+
         else:
             raise ValueError(f'"mode" must be "train" or "val", but got {mode}')
             
@@ -365,17 +387,21 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
                 
                 
         # load prompts
-        self.prompts = dict()
-        for dadtaset_name, one_prompts_path in self.prompts_path.items():
-            self.prompts = self.prompts | torch.load(one_prompts_path)
-            # self.prompts = {**self.prompts, **torch.load(one_prompts_path)}
-        # self.prompts = torch.load(self.prompts_path) # dict('{img_name}': Tensor(1, prompt_length, c))
-        # padding
-        # max_length = max([p.size(1) for p in self.prompts.values()])
-        # self.prompts = {k: torch.nn.functional.pad(p, (0, max_length - p.size(0)), mode='constant', value=0) for k, p in self.prompts.items()}
-        padding_length = 32
-        # self.prompts = {k: torch.nn.functional.pad(p, (0, 0, 0, padding_length - p.size(1)), mode='constant', value=0) for k, p in self.prompts.items()}
-        self.prompts = {k: torch.nn.functional.pad(p, (0, padding_length - p.size(1)), mode='constant', value=0) for k, p in self.prompts.items()}
+        self.use_prompt = use_prompt
+        if use_prompt:
+            self.prompts = dict()
+            for dadtaset_name, one_prompts_path in self.prompts_path.items():
+                self.prompts = self.prompts | torch.load(one_prompts_path)
+                # self.prompts = {**self.prompts, **torch.load(one_prompts_path)}
+            # self.prompts = torch.load(self.prompts_path) # dict('{img_name}': Tensor(1, prompt_length, c))
+            # padding
+            # max_length = max([p.size(1) for p in self.prompts.values()])
+            # self.prompts = {k: torch.nn.functional.pad(p, (0, max_length - p.size(0)), mode='constant', value=0) for k, p in self.prompts.items()}
+            padding_length = 32
+            # self.prompts = {k: torch.nn.functional.pad(p, (0, 0, 0, padding_length - p.size(1)), mode='constant', value=0) for k, p in self.prompts.items()}
+            self.prompts = {k: torch.nn.functional.pad(p, (0, padding_length - p.size(1)), mode='constant', value=0) for k, p in self.prompts.items()}
+        else:
+            self.prompts = None
         
         # load class indices
         self.class_labels = dict()
@@ -433,7 +459,10 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
         
         # prompts
         image_name = os.path.basename(self.image_file_paths[idx])
-        prompt = self.prompts[image_name].long()
+        if self.use_prompt:
+            prompt = self.prompts[image_name].long()
+        else:
+            prompt = None
         # padding_prompt = None
         
         # class indices
@@ -463,25 +492,28 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
     
     @staticmethod
     def collate_fn(batch):
-        prompts = [item['prompt'].squeeze(0) for item in batch]
+        prompts = [item['prompt'].squeeze(0) for item in batch if item['prompt'] is not None]
         class_labels = [item['class_label'] for item in batch if item['class_label'] is not None]
         images = [item['image'] for item in batch]
         seg_maps = [item['seg_map'] for item in batch]
-        
-        prompts_tensor = torch.stack(prompts)
+
+        if len(prompts) > 0:
+            prompts_tensor = torch.stack(prompts)
+        else:
+            prompts_tensor = None
         if class_labels == []:
             class_labels_tensor = None
         else:
             class_labels_tensor = torch.stack(class_labels)
-            
+
         images_tensor = torch.stack(images)
         seg_maps_tensor = torch.stack(seg_maps)
-        
+
         inputs = dict(
             prompt=prompts_tensor,
             image=images_tensor
         )
-        
+
         if class_labels_tensor is None:
             labels = dict(
                 label_mask=seg_maps_tensor
@@ -491,7 +523,7 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
                 class_labels=class_labels_tensor,
                 label_mask=seg_maps_tensor
             )
-        
+
         return inputs, labels
     
     
@@ -502,63 +534,69 @@ class Joint_Foreground_Prompt_Dataset(Dataset):
     
 class Joint_Foreground_Prompt_Dataset_Config():
     '''
-    
+
     '''
 
     def __init__(self,
-                 data_root, 
-                 
+                 data_root,
+
                  transform_cfg_name: str,
                  transform_cfg_args: Dict,
-                 
+
                  prompt_suffix='.pt',
                  class_suffix='.json',
                  img_suffix='.jpg',
                  seg_map_suffix='.png',
-                 truncate_ratio = None) -> None:
+                 truncate_ratio = None,
+                 use_prompt_train: bool = True,
+                 use_prompt_val: bool = False) -> None:
         self.data_root = data_root
-        
+
         transform_cfg_instance = build_transform(transform_cfg_name, transform_cfg_args)
         self.train_pipeline = transform_cfg_instance.get_train_pipeline_compose
         # compose object
         self.test_pipeline = transform_cfg_instance.get_validate_pipeline_compose
-        
-        
+
+
         self.prompt_suffix = prompt_suffix
         self.class_suffix = class_suffix
         self.img_suffix = img_suffix
         self.seg_map_suffix = seg_map_suffix
-        
+
         self.truncate_ratio = truncate_ratio
-        
+        self.use_prompt_train = use_prompt_train
+        self.use_prompt_val = use_prompt_val
+
 
     @property
     def dataset_train(self):
         return Joint_Foreground_Prompt_Dataset(
-            dataset_root=self.data_root, 
+            dataset_root=self.data_root,
             prompt_suffix=self.prompt_suffix,
             class_suffix=self.class_suffix,
             img_suffix=self.img_suffix,
             seg_map_suffix=self.seg_map_suffix,
-                                               
-            mode='train', 
+
+            mode='train',
             transforms=self.train_pipeline,
-            truncate_ratio=self.truncate_ratio
+            truncate_ratio=self.truncate_ratio,
+            use_prompt=self.use_prompt_train
         )
-    
+
     @property
     def dataset_val(self):
         return Joint_Foreground_Prompt_Dataset(
-            dataset_root=self.data_root, 
+            dataset_root=self.data_root,
             prompt_suffix=self.prompt_suffix,
             class_suffix=self.class_suffix,
             img_suffix=self.img_suffix,
             seg_map_suffix=self.seg_map_suffix,
-            
-            mode='val', 
+
+            mode='val',
             transforms=self.test_pipeline,
-            truncate_ratio=self.truncate_ratio
-        ) 
+            truncate_ratio=self.truncate_ratio,
+            use_prompt=self.use_prompt_val
+        )
     
     
     
